@@ -14,15 +14,15 @@ migration_name = '0052_auto_20241030_1757'
 if connection.vendor == 'sqlite':
     sql_update_created_at = """
     UPDATE tasks_tasklock
-    SET created_at = datetime(expire_at, %s);
+    SET created_at = datetime(expire_at, ?);
     """
     sql_params = (f'-{settings.TASK_LOCK_TTL} seconds',)
 else:
-    sql_update_created_at = """
+    sql_update_created_at = f"""
     UPDATE tasks_tasklock
-    SET created_at = expire_at - INTERVAL %s;
+    SET created_at = expire_at - INTERVAL {settings.TASK_LOCK_TTL} SECOND;
     """
-    sql_params = ('%s seconds' % settings.TASK_LOCK_TTL,)
+    sql_params = ()
 
 def forward_migration(migration_name):
     migration = AsyncMigrationStatus.objects.create(

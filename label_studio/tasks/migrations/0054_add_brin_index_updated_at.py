@@ -24,15 +24,29 @@ def forward_migration(migration_name):
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "task_updated_at_brin_idx" 
         ON "task" USING BRIN ("updated_at");
         '''
-    else:
+    elif connection.vendor == 'sqllite':
         # SQLite fallback - regular B-tree index
         sql = '''
-        CREATE INDEX IF NOT EXISTS "task_updated_at_brin_idx" 
-        ON "task" ("updated_at");
+        CREATE INDEX IF NOT EXISTS `task_updated_at_brin_idx` 
+        ON `task` (`updated_at`);
         '''
+    else:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                AND table_name = 'task'
+                AND index_name = 'task_updated_at_brin_idx'
+            """)
+            if cursor.fetchone()[0] == 0:
+                cursor.execute("CREATE INDEX task_updated_at_brin_idx ON `task` (`updated_at`)")
+
+        
     
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
+    if sql:
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
     
     migration.status = AsyncMigrationStatus.STATUS_FINISHED
     migration.save()
@@ -49,7 +63,7 @@ def reverse_migration(migration_name):
     if connection.vendor == 'postgresql':
         sql = 'DROP INDEX CONCURRENTLY IF EXISTS "task_updated_at_brin_idx";'
     else:
-        sql = 'DROP INDEX IF EXISTS "task_updated_at_brin_idx";'
+        sql = 'DROP INDEX IF EXISTS `task_updated_at_brin_idx`;'
     
     with connection.cursor() as cursor:
         cursor.execute(sql)

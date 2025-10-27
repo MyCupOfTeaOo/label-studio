@@ -76,6 +76,7 @@ dependencies = [
     ## HumanSignal repo dependencies :start
     "label-studio-sdk @ https://github.com/HumanSignal/label-studio-sdk/archive/7290779bdb88a4940779926a79ed9bc1244e76b4.zip",
     ## HumanSignal repo dependencies :end
+    "mysqlclient (>=2.2.7,<3.0.0)"
 ]
 
 [project.urls]
